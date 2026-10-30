@@ -84,7 +84,7 @@ function table(s,start,end,cols,heads){const cells=MODEL.sheets[s].cells,merged=
  for(let r=start;r<=end;r++){const label=cells['A'+r]?.v??'';const total=/Pontuação Obtida|TOTAL Limitado|Total da pontuação/.test(label),sub=/Subtotal|Subtotais|TOTAL Bruto/.test(label);html+=`<tr class="${total?'total':sub?'subtotal':''}">`;
  for(const col of cols){const a=col+r,c=cells[a];if(skip.has(a))continue;let v=c?.v??'',body='';const calc=typeof v==='string'&&v.startsWith('=');if(c?.input)body=control(s,a,`${label} — ${col==='G'?'Comentário':col==='F'?'Pontuação manual':heads[cols.indexOf(col)]}`);else if(calc)body=output(s,a);else body=esc(typeof v==='number'?fmt(v,c?.format):v);
  if(s===0&&a==='D46')body='<span>No anexo</span>';
- if(s===0&&a==='A46')body+='<br><a class="annex-link" href="#anexo">Preencher produção artística ↗</a>';
+ if(s===0&&a==='A46')body+='<br><a class="annex-link" href="#anexo">Preencher produção artística do Anexo↗</a>';
  html+=`<td ${merged[a]?`rowspan="${merged[a]}"`:''} class="${col!=='A'&&!/Comentário|preenchimento/.test(heads[cols.indexOf(col)])?'center ':''}${calc?'calc':typeof v==='number'?'numeric':'value'}">${body}</td>`}
  html+='</tr>'}return html+'</tbody></table></div>'}
 function panel(id,title,content,sub=''){return `<section id="${id}" class="panel"><div class="panel-head"><h2>${esc(title)}</h2><small>${esc(sub)}</small></div>${content}</section>`}
