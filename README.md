@@ -6,7 +6,7 @@ Cada modalidade usa seu modelo de cálculo e mantém um rascunho separado. B par
 
 As duas abas dos arquivos Excel exportados têm fórmulas e campos fixos protegidos com a senha `1234`, mantendo os campos de entrada editáveis.
 
-**Acessar:** https://GlauberLASantiago.github.io/avaliacao-docente-b-para-c/
+**Acessar:** https://glauberlasantiago.github.io/guia-avaliacao-docente-cada-c/
 
 O aplicativo está inteiramente em `index.html`. Pode ser aberto diretamente no navegador ou hospedado em um servidor estático. As fontes Syne e Work Sans são carregadas pelo Google Fonts.
 
