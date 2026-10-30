@@ -149,7 +149,7 @@ function makeExcel(){if(!validate())throw Error('Há campos inválidos.');cache=
 $('#excel').onclick=()=>{try{download(makeExcel(),'Avaliacao-'+MODEL.id.toUpperCase()+'.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');toast('Excel exportado com as duas abas e as fórmulas.')}catch(e){toast('Falha ao exportar: '+e.message)}};
 function modeKey(id){return id==='bc'?BASE_KEY:BASE_KEY+':'+id}
 function loadMode(id){MODEL=MODELS[id]||MODELS.bc;KEY=modeKey(MODEL.id);state={};try{const saved=localStorage.getItem(KEY);if(saved)state=validateImport(JSON.parse(saved))}catch{toast('Abra uma cópia salva para recuperar seu preenchimento.')}}
-$('#evaluation-mode').onchange=e=>{persist();loadMode(e.target.value);try{localStorage.setItem(BASE_KEY+'-selected',MODEL.id)}catch{}location.hash='#identificacao';render()};
+$('#evaluation-mode').onchange=e=>{const next=e.target.value;if(next===MODEL.id)return;if(!confirm('Deseja mudar a modalidade de avaliação?\n\nOs dados do formulário atual não serão transferidos para a nova modalidade. Salve uma cópia em “Salvar preenchimento” se quiser guardá-los em um arquivo.\n\nO rascunho de cada modalidade permanece salvo neste navegador.\n\nClique em OK para mudar ou em Cancelar para continuar no formulário atual.')){e.target.value=MODEL.id;return}persist();loadMode(next);try{localStorage.setItem(BASE_KEY+'-selected',MODEL.id)}catch{}location.hash='#identificacao';render()};
 let selected='bc';try{selected=localStorage.getItem(BASE_KEY+'-selected')||'bc'}catch{}loadMode(selected);
 render();
 </script></body></html>
