@@ -27,6 +27,83 @@ header,.panel,.metric{background:var(--paper)}button{background:#f4f3ec}td{borde
 #errors{background:#dce9e9;border-color:#8baeb4;border-left:4px solid #005f73;color:#163d47}input[type=date]:invalid{border:1px solid #bccfc8;background:#fffcf2}input[type=date].date-review{border:2px solid #b64d32;background:#fff0eb}
 .mode-picker{background:#c8dfe2;border:1px solid #8baeb4;border-left:5px solid #005f73;border-radius:6px;padding:18px 22px;margin-bottom:24px}.mode-picker label{display:block;font-weight:600;margin-bottom:8px}.mode-picker select{width:100%;min-height:46px;font-size:16px;font-weight:600}.mode-picker p{font-size:12px;margin:10px 0 0}.score-only .metrics{grid-template-columns:1fr}.score-only .metric:not(:first-child){display:none}.tag{white-space:normal;max-width:230px}@media print{.mode-picker{padding:8px}.mode-picker p{font-size:8px}}
 .brand{min-width:0}.brand>div:last-child{min-width:0}.brand small{letter-spacing:0;line-height:1.45;max-width:680px}@media(max-width:560px){.brand small{font-size:10px}.mode-picker select{font-size:13px}}
+/* Identidade visual inspirada na interface administrativa da UFSCar. */
+@media screen {
+  :root {
+    --bg: #edeff7;
+    --paper: #fff;
+    --ink: #242830;
+    --muted: #525c6c;
+    --line: #d9dee7;
+    --accent: #b74710;
+    --accent-soft: #fff0e5;
+    --shell: #2d3139;
+    --green: var(--accent);
+  }
+  header {background: var(--shell); color: #fff; border: 0; padding: 12px 22px;}
+  .brand small {color: #d6dae2;}
+  .mark {background: var(--accent); color: #fff; border-radius: 50%; flex: 0 0 37px;}
+  header .actions button {background: #383d47; color: #fff; border: 1px solid #6a7280;}
+  header .actions button:hover {background: #484f5c;}
+  header .actions .primary {background: var(--accent); border-color: #df8752;}
+  header .actions .primary:hover {background: #96390d;}
+  header .actions button:disabled {opacity: .65; cursor: default;}
+  h1, h2, h3, h4, .brand strong, .metric strong {font-family: var(--font-body);}
+  h1 {font-size: clamp(24px, 3vw, 34px); letter-spacing: -.035em; font-weight: 600;}
+  .intro {border: 0; padding-top: 0;}
+  .eyebrow, .credits a, .annex-back {color: var(--accent);}
+  .tag, .annex-link {background: var(--accent-soft); color: #8c360d;}
+  .annex-link:hover {background: #fbe0cb;}
+  aside {background: var(--shell); color: #e0e3eb; border-radius: 8px; padding: 14px 10px;}
+  aside p, .local {color: #cdd2dc;}
+  aside > p {margin: 4px 10px 12px;}
+  nav a {color: #e0e3eb; border-left: 3px solid transparent;}
+  nav a span {color: #ffad79;}
+  nav a:hover, nav a[aria-current="page"] {background: #3c424d; color: #fff; border-left-color: #ff9d60;}
+  .local {margin: 14px 8px 0; border-top: 1px solid #646c7a;}
+  .local button {background: #393f49; border: 1px solid #747d8b; color: #fff;}
+  .local button:hover {background: #4b5361;}
+  .mode-picker, .panel, .metric, .metric:first-child {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 5px 16px #303b5510;
+  }
+  .mode-picker {border-left: 4px solid var(--accent);}
+  .mode-picker p, .intro p, .hint {color: var(--muted);}
+  .panel .panel-head {background: #fff; border-bottom: 1px solid var(--line);}
+  .panel-head small, .section-index {color: var(--muted);}
+  .metric:first-child {color: var(--ink); border-left: 4px solid var(--accent);}
+  .metric:first-child::after {display: none;}
+  .metric:first-child strong {color: var(--accent);}
+  .metric small, .metric em {color: var(--muted); opacity: 1;}
+  .hint, th, #resultado table:last-child thead th {background: #f0f2f6; color: #394252;}
+  th, td {border-bottom: 1px solid var(--line);}
+  tbody tr:nth-child(even):not(.total):not(.subtotal) {background: #f8f9fc;}
+  tbody tr:hover:not(.total):not(.subtotal) {background: #eff2f8;}
+  td.calc, .subtotal td {background: #f0f2f7; color: #394252;}
+  .total td {background: var(--accent-soft); color: #80330e;}
+  input, textarea, select, input[type=date]:invalid, #resultado table:last-child textarea {
+    background: #fff;
+    border-color: #a8b0bf;
+  }
+  .period-field {border-color: var(--line);}
+  input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible {outline-color: var(--accent);}
+  #errors {background: var(--accent-soft); color: #633c29; border-color: #e8c5ae; border-left-color: var(--accent);}
+  .annex-toolbar, .toast {background: var(--shell);}
+  .annex-toolbar strong, .annex-toolbar small {color: #ffbd94;}
+  .annex-toolbar a {background: #ffb487; color: #40200d;}
+  .toast {border-left-color: #ff9d60;}
+  @media (min-width: 1051px) {
+    .layout {grid-template-columns: 205px minmax(0, 1fr); gap: 24px;}
+    aside {max-height: calc(100vh - 116px); overflow-y: auto;}
+  }
+  @media (max-width: 1050px) {
+    aside {padding: 6px;}
+    nav a {border-left: 0; border-bottom: 3px solid transparent;}
+    nav a:hover, nav a[aria-current="page"] {border-bottom-color: #ff9d60;}
+  }
+}
 </style></head>
 <body><header><div class="brand"><div class="mark">C</div><div><strong>UFSCar · Guia de Avaliação docente</strong><small>Comissão de Avaliação de Desempenho Acadêmico - Classe C (CADA-C)</small></div></div><div class="actions"><button id="save">Salvar preenchimento</button><button id="load">Abrir preenchimento</button><button id="pdf">Imprimir / PDF</button><button id="excel" class="primary">Exportar Excel ↓</button></div></header>
 <div class="layout"><aside><p>Seu formulário</p><nav id="nav"></nav><div class="local"><strong>Preenchimento local</strong><p>Os dados ficam neste navegador. Salve uma cópia para continuar em outro computador.</p><span id="saved" role="status">Pronto para preencher</span><p><button id="reset">Limpar formulário</button></p></div></aside><main><section class="mode-picker"><label for="evaluation-mode">Modalidade de avaliação</label><select id="evaluation-mode"><option value="bc">1 — Promoção da classe B (Adjunto) para C (Associado)</option><option value="cc">2 — Progressão na classe C (Associado)</option><option value="cd">3 — Promoção da classe C (Associado) para D (Titular)</option></select><p id="mode-description"></p><span class="print-value" id="mode-print"></span></section><div id="errors" class="note" role="status" aria-live="polite"></div><div id="main-page">
