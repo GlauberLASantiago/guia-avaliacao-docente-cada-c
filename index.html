@@ -104,6 +104,10 @@ header,.panel,.metric{background:var(--paper)}button{background:#f4f3ec}td{borde
     nav a:hover, nav a[aria-current="page"] {border-bottom-color: #ff9d60;}
   }
 }
+@media screen {
+  td.unit-help {cursor: help;}
+  .unit-help-icon {color: var(--accent); font-weight: 600;}
+}
 </style></head>
 <body><header><div class="brand"><div class="mark">C</div><div><strong>UFSCar · Guia de Avaliação docente</strong><small>Comissão de Avaliação de Desempenho Acadêmico - Classe C (CADA-C)</small></div></div><div class="actions"><button id="save">Salvar preenchimento</button><button id="load">Abrir preenchimento</button><button id="pdf">Imprimir / PDF</button><button id="excel" class="primary">Exportar Excel ↓</button></div></header>
 <div class="layout"><aside><p>Seu formulário</p><nav id="nav"></nav><div class="local"><strong>Preenchimento local</strong><p>Os dados ficam neste navegador. Salve uma cópia para continuar em outro computador.</p><span id="saved" role="status">Pronto para preencher</span><p><button id="reset">Limpar formulário</button></p></div></aside><main><section class="mode-picker"><label for="evaluation-mode">Modalidade de avaliação</label><select id="evaluation-mode"><option value="bc">1 — Promoção da classe B (Adjunto) para C (Associado)</option><option value="cc">2 — Progressão na classe C (Associado)</option><option value="cd">3 — Promoção da classe C (Associado) para D (Titular)</option></select><p id="mode-description"></p><span class="print-value" id="mode-print"></span></section><div id="errors" class="note" role="status" aria-live="polite"></div><div id="main-page">
@@ -161,6 +165,21 @@ function control(s,a,label){const text=isText(s,a),v=inputValue(s,a);const attrs
  return field+`<span class="print-value" data-print="${s}:${a}">${esc(v)}</span>`}
 function output(s,a){const c=MODEL.sheets[s].cells[a];return `<span data-output="${s}:${a}" title="${esc(c?.v)}">—</span>`}
 const sectionDefs=[['ensino','Atividades de ensino',14,23,'Art. 46'],['orientacao','Atividades de orientação',24,38,'Art. 47'],['producao','Produção intelectual',39,65,'Art. 48'],['pesquisa','Atividades de pesquisa',66,74,'Art. 49'],['extensao','Atividades de extensão',75,79,'Art. 50'],['administracao','Administração e assessoramento',80,91,'Art. 51'],['representacao','Atividades de representação',92,112,'Art. 52'],['outras','Outras atividades',113,130,'Art. 53']];
+const teachingHoursHelp = 'Indique aqui a quantidade total de horas que de fato você está utilizando. Desconsidere cargas horárias sobrepostas ou destinadas apenas a estudantes.';
+const largeClassesHelp = 'Considerando as turmas computadas neste item, indique quantas tiveram 50 ou mais estudantes.';
+const extensionMonthsHelp = 'Some todos os meses de cada atividade considerada.';
+const unitHelpByRow = {
+  15: teachingHoursHelp,
+  16: largeClassesHelp,
+  17: teachingHoursHelp,
+  18: largeClassesHelp,
+  19: teachingHoursHelp,
+  20: largeClassesHelp,
+  36: 'Para este item, faça manualmente o cálculo e indique nos comentários como ele foi realizado.',
+  46: 'Acesse o link específico para preencher a pontuação deste item.',
+  76: extensionMonthsHelp,
+  77: extensionMonthsHelp,
+};
 function table(s,start,end,cols,heads){if(s===0&&start>=160){start+=MODEL.leaveOffset;end+=MODEL.leaveOffset}if(MODEL.scoreOnly&&s===0&&cols.includes('E')){const i=cols.indexOf('E');cols=cols.filter((_,n)=>n!==i);heads=heads.filter((_,n)=>n!==i)}const cells=MODEL.sheets[s].cells,merged={},skip=new Set();for(const m of MODEL.sheets[s].merges){const [a,b]=m.split(':'),r1=+a.match(/\d+/)[0],r2=+b.match(/\d+/)[0],c1=a.charCodeAt(0),c2=b.charCodeAt(0);if(r1<start||r2>end||c1!==c2)continue;merged[a]=r2-r1+1;for(let r=r1+1;r<=r2;r++)skip.add(String.fromCharCode(c1)+r)}
  const widths=s===1?[48,10,12,12,18]:cols.length===2?[72,28]:cols.length===3?[66,17,17]:cols.length===4?[58,14,14,14]:cols.length===6?[40,10,12,12,13,13]:[40,8,12,10,9,10,11];
  let html='<div class="table-wrap"><table><colgroup>'+cols.map((c,i)=>`<col style="width:${widths[i]}%">`).join('')+'</colgroup><thead><tr>'+heads.map((x,i)=>`<th class="${i>0&&!/Comentário|preenchimento/.test(x)?'center':''}">${x}</th>`).join('')+'</tr></thead><tbody>';
@@ -168,7 +187,9 @@ function table(s,start,end,cols,heads){if(s===0&&start>=160){start+=MODEL.leaveO
  for(const col of cols){const a=col+r,c=cells[a];if(skip.has(a))continue;let v=c?.v??'',body='';const calc=typeof v==='string'&&v.startsWith('=');if(c?.input)body=control(s,a,`${label} — ${col==='G'?'Comentário':col==='F'?'Pontuação manual':heads[cols.indexOf(col)]}`);else if(calc)body=output(s,a);else body=esc(typeof v==='number'?fmt(v,c?.format):v);
  if(s===0&&a==='D46')body='<span>No anexo</span>';
  if(s===0&&a==='A46')body+='<br><a class="annex-link" href="#anexo">Preencher produção artística do Anexo↗</a>';
- html+=`<td ${merged[a]?`rowspan="${merged[a]}"`:''} class="${col!=='A'&&!/Comentário|preenchimento/.test(heads[cols.indexOf(col)])?'center ':''}${calc?'calc':typeof v==='number'?'numeric':'value'}">${body}</td>`}
+ const unitHelp = s === 0 && col === 'C' && heads[cols.indexOf(col)] === 'Unidade' ? unitHelpByRow[r] : '';
+ if (unitHelp) body += ' <span class="unit-help-icon no-print" aria-hidden="true">ⓘ</span>';
+ html+=`<td ${merged[a]?`rowspan="${merged[a]}"`:''} ${unitHelp?`title="${esc(unitHelp)}"`:''} class="${unitHelp?'unit-help ':''}${col!=='A'&&!/Comentário|preenchimento/.test(heads[cols.indexOf(col)])?'center ':''}${calc?'calc':typeof v==='number'?'numeric':'value'}">${body}</td>`}
  html+='</tr>'}return html+'</tbody></table></div>'}
 function panel(id,title,content,sub=''){return `<section id="${id}" class="panel"><div class="panel-head"><h2>${esc(title)}</h2><small>${esc(sub)}</small></div>${content}</section>`}
 function render(){
