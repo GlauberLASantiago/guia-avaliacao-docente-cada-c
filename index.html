@@ -403,7 +403,7 @@ function evaluatorActivityTable(start,end){
     const rawLabel=evaluatorText(MODEL.sheets[0].cells['A'+r]?.v),label=activityLabel(rawLabel),tr=document.createElement('tr');
     if(/Pontuação Obtida|TOTAL Limitado|Total da pontuação/.test(label))tr.className='total';else if(/Subtotal|Subtotais|TOTAL Bruto/.test(label))tr.className='subtotal';
     for(const [index,[column]] of columns.entries()){
-      const td=document.createElement('td'),a=column+r;td.textContent=index===0?label:evaluatorCellValue(a);if(index>0)td.style.textAlign='center';if(index===columns.length-1)td.style.fontWeight='700';tr.append(td);
+      const td=document.createElement('td'),a=column+r;td.textContent=index===0?label:evaluatorCellValue(a);if(index>0)td.style.textAlign='center';tr.append(td);
     }
     body.append(tr);
   }
@@ -453,7 +453,7 @@ function evaluatorClipboardHtml(){
   source.querySelectorAll('table').forEach(table=>{table.style.width='100%';table.style.borderCollapse='collapse';table.style.marginBottom='8px';});
   source.querySelectorAll('th').forEach(th=>{th.style.cssText+=';background:#e4f2ed;color:#005f73;padding:7px;border:1px solid #afbeb8;text-align:left;font-size:11px;'});
   source.querySelectorAll('td').forEach(td=>{td.style.cssText+=';padding:7px;border:1px solid #afbeb8;font-size:11px;vertical-align:middle;'});
-  source.querySelectorAll('td.calc,tr.total td,.good,.bad,.neutral').forEach(el=>{el.style.fontWeight='700'});
+  source.querySelectorAll('tr.total td').forEach(el=>{el.style.fontWeight='700'});
   source.querySelectorAll('h1,h2,h3,h4').forEach(h=>{h.style.fontFamily='Arial,sans-serif';});
   source.querySelectorAll('.panel-head').forEach(head=>{head.style.cssText='padding:8px 0 5px;border-bottom:2px solid #005f73;background:#e4f2ed;margin-top:12px'});
   source.querySelectorAll('.fields').forEach(fields=>{fields.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;padding:8px 0'});
