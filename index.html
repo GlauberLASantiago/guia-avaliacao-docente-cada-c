@@ -403,7 +403,7 @@ function evaluatorClipboardHtml(){
     const identityLine=[name+(email?` (${email})`:''),department].filter(Boolean).join('. ');
     const details=document.createElement('div');
     details.style.cssText='padding:10px 0 4px';
-    details.innerHTML=`<p style="margin:0 0 7px"><strong>Nome completo:</strong> ${esc(identityLine)}</p><p style="margin:0 0 7px"><strong>Promoção / progressão</strong> ${esc(promotion)}</p><p style="margin:0"><strong>Período avaliado:</strong> de ${esc(dateBR(dates.start))} a ${esc(dateBR(dates.end)}.</p>`;
+    details.innerHTML=`<p style="margin:0 0 7px"><strong>Nome completo:</strong> ${esc(identityLine)}</p><p style="margin:0 0 7px"><strong>Promoção / progressão</strong> ${esc(promotion)}</p><p style="margin:0"><strong>Período avaliado:</strong> de ${esc(dateBR(dates.start))} a ${esc(dateBR(dates.end))}.</p>`;
     identification.replaceChildren(...(head?[head,details]:[details]));
   }
   source.querySelectorAll('.no-print,.print-value,.months-link,.unit-help-icon,.annex-link,#errors,.hint,.intro').forEach(el=>el.remove());
