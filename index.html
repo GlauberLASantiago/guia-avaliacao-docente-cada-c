@@ -382,15 +382,25 @@ $('#pdf').onclick=()=>{if(validate()){window.print()}};
 function evaluatorText(value){return value===''||value==null?'':String(value)}
 function evaluatorClipboardHtml(){
   const wrapper=document.createElement('div');
-  wrapper.style.cssText='font-family:Arial,sans-serif;color:#172e32;background:#fff;max-width:1100px;margin:0 auto;line-height:1.45';
+  wrapper.style.cssText='font-family:Arial,sans-serif;color:#172e32;background:#fff;max-width:900px;margin:0 auto;line-height:1.35;font-size:12px';
   const title=document.createElement('div');
-  title.innerHTML='<h1 style="font-family:Arial,sans-serif;font-size:24px;margin:0 0 4px;color:#172e32">UFSCar · Guia de Avaliação docente</h1><p style="margin:0 0 18px;color:#526760;font-size:12px">Comissão de Avaliação de Desempenho Acadêmico - Classe C (CADA-C)</p>';
+  title.innerHTML='<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">Fundação Universidade Federal de São Carlos</div><div style="font-size:12px;font-weight:700;text-transform:uppercase">Comissão de Avaliação de Desempenho Acadêmico - Classe C (CADA-C)</div><h1 style="font-family:Arial,sans-serif;font-size:20px;margin:12px 0 3px;color:#172e32">Planilha de Avaliação de Progressão / Promoção docente</h1><p style="margin:0 0 14px;color:#526760;font-size:11px">Documento para uso do Avaliador</p>';
   wrapper.append(title);
   const source=document.createElement('div');
   source.append(document.querySelector('#main-page').cloneNode(true));
-  const annex=document.querySelector('#art-page');
-  if(annex) source.append(annex.cloneNode(true));
-  source.querySelectorAll('.no-print,.print-value,.months-link,.unit-help-icon,.annex-link,#errors').forEach(el=>el.remove());
+  source.querySelectorAll('.no-print,.print-value,.months-link,.unit-help-icon,.annex-link,#errors,.hint,.intro p,.tag').forEach(el=>el.remove());
+  source.querySelectorAll('.metrics').forEach(el=>el.remove());
+  const headingLabels=['01 — Identificação do docente','03 — Atividades de Ensino — Artigo 46','04 — Atividades de Orientação — Artigo 47','05 — Produção Intelectual — Artigo 48','06 — Atividades de Pesquisa — Artigo 49','07 — Atividades de Extensão — Artigo 50','08 — Administração / Assessoramento — Artigo 51','09 — Atividades de Representação — Artigo 52','10 — Outras Atividades — Artigo 53','Afastamento — Artigos 54 e 55','Resumo da avaliação'];
+  source.querySelectorAll('.panel-head h2').forEach((h,i)=>{if(headingLabels[i])h.textContent=headingLabels[i]});
+  source.querySelectorAll('.panel-head small').forEach(el=>el.remove());
+  source.querySelectorAll('.table-wrap table').forEach(table=>{
+    const heads=[...table.querySelectorAll('thead th')].map(th=>th.textContent.trim().toLowerCase());
+    const activity=heads.includes('atividade')&&heads.includes('valor')&&heads.includes('pontos');
+    if(activity){
+      const keep=heads.map((h,i)=>['atividade','valor','máximo','pontos'].includes(h)?i:-1).filter(i=>i>=0);
+      table.querySelectorAll('tr').forEach(row=>[...row.children].forEach((cell,i)=>{if(!keep.includes(i))cell.remove()}));
+    }
+  });
   source.querySelectorAll('input,select,textarea').forEach(control=>{
     const span=document.createElement('span');
     let value='';
@@ -406,13 +416,16 @@ function evaluatorClipboardHtml(){
   source.querySelectorAll('th').forEach(th=>{th.style.cssText+=';background:#e4f2ed;color:#005f73;padding:7px;border:1px solid #afbeb8;text-align:left;font-size:11px;'});
   source.querySelectorAll('td').forEach(td=>{td.style.cssText+=';padding:7px;border:1px solid #afbeb8;font-size:11px;vertical-align:middle;'});
   source.querySelectorAll('h1,h2,h3,h4').forEach(h=>{h.style.fontFamily='Arial,sans-serif';});
+  source.querySelectorAll('.panel-head').forEach(head=>{head.style.cssText='padding:8px 0 5px;border-bottom:2px solid #005f73;background:#e4f2ed;margin-top:12px'});
+  source.querySelectorAll('.fields').forEach(fields=>{fields.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:5px 16px;padding:8px 0'});
+  source.querySelectorAll('.field label').forEach(label=>{label.style.cssText='display:inline;font-weight:700;color:#172e32;margin-right:5px'});
   wrapper.append(source);
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Para uso do Avaliador</title></head><body>'+wrapper.outerHTML+'</body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Para uso do Avaliador</title></head><body style="margin:24px;background:#fff">'+wrapper.outerHTML+'</body></html>';
 }
 async function copyForEvaluator(){
   if(!validate()){toast('Informe as datas e confira os campos antes de copiar para o Avaliador.');return}
   const html=evaluatorClipboardHtml();
-  const plain=document.querySelector('#main-page').innerText+'\n\n'+(document.querySelector('#art-page')?.innerText||'');
+  const plain=new DOMParser().parseFromString(html,'text/html').body.innerText;
   try{
     if(navigator.clipboard?.write && window.ClipboardItem){
       await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]);
