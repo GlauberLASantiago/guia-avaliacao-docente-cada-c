@@ -106,7 +106,8 @@ header,.panel,.metric{background:var(--paper)}button{background:#f4f3ec}td{borde
 }
 @media screen {
   td.unit-help {cursor: help;}
-  .unit-help-icon {color: var(--accent); font-family: 'Segoe UI Symbol', sans-serif; font-weight: normal; white-space: nowrap;}
+  .unit-help-icon {display:inline-grid; place-items:center; width:18px; height:18px; margin-left:4px; border-radius:50%; background:#005f73; color:#fff; font-family:Arial,sans-serif; font-size:12px; font-weight:700; line-height:1; vertical-align:middle; cursor:help; white-space:nowrap; box-shadow:0 1px 2px #00121933;}
+  .unit-help-icon:focus-visible {outline:3px solid #ee9b00; outline-offset:2px;}
 }
 .months-link {display: block; margin: 6px auto 0; padding: 2px; border: 0; background: transparent; color: var(--accent, #9c390c); text-decoration: underline; font-size: 11px;}
 .months-link:hover {background: transparent; color: #80330e;}
@@ -302,7 +303,7 @@ function table(s,start,end,cols,heads){if(s===0&&start>=160){start+=MODEL.leaveO
    (heading === 'Meses' || (heading === 'Quantidade' && cells['C'+r]?.v === 'Meses'));
  if (isMonthsInput) body += ' <button type="button" class="months-link no-print" aria-haspopup="dialog">Calcular meses</button>';
  const unitHelp = s === 0 && col === 'C' && heads[cols.indexOf(col)] === 'Unidade' ? unitHelpByRow[r] : '';
- if (unitHelp) body += ' <span class="unit-help-icon no-print" aria-hidden="true">&#x2139;&#xFE0E;</span>';
+ if (unitHelp) body += ` <span class="unit-help-icon no-print" tabindex="0" role="img" aria-label="Ajuda: ${esc(unitHelp)}" title="${esc(unitHelp)}">i</span>`;
  html+=`<td ${merged[a]?`rowspan="${merged[a]}"`:''} ${unitHelp?`title="${esc(unitHelp)}"`:''} class="${unitHelp?'unit-help ':''}${col!=='A'&&!/Comentário|preenchimento/.test(heads[cols.indexOf(col)])?'center ':''}${calc?'calc':typeof v==='number'?'numeric':'value'}">${body}</td>`}
  html+='</tr>'}return html+'</tbody></table></div>'}
 function panel(id,title,content,sub=''){return `<section id="${id}" class="panel"><div class="panel-head"><h2>${esc(title)}</h2><small>${esc(sub)}</small></div>${content}</section>`}
