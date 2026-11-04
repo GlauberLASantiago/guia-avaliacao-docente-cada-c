@@ -106,7 +106,7 @@ header,.panel,.metric{background:var(--paper)}button{background:#f4f3ec}td{borde
 }
 @media screen {
   td.unit-help {cursor: help;}
-  .unit-help-icon {color: var(--accent); font-weight: 600;}
+  .unit-help-icon {color: var(--accent); font-family: 'Segoe UI Symbol', sans-serif; font-weight: normal; white-space: nowrap;}
 }
 </style></head>
 <body><header><div class="brand"><div class="mark">C</div><div><strong>UFSCar · Guia de Avaliação docente</strong><small>Comissão de Avaliação de Desempenho Acadêmico - Classe C (CADA-C)</small></div></div><div class="actions"><button id="save">Salvar preenchimento</button><button id="load">Abrir preenchimento</button><button id="pdf">Imprimir / PDF</button><button id="excel" class="primary">Exportar Excel ↓</button></div></header>
@@ -188,7 +188,7 @@ function table(s,start,end,cols,heads){if(s===0&&start>=160){start+=MODEL.leaveO
  if(s===0&&a==='D46')body='<span>No anexo</span>';
  if(s===0&&a==='A46')body+='<br><a class="annex-link" href="#anexo">Preencher produção artística do Anexo↗</a>';
  const unitHelp = s === 0 && col === 'C' && heads[cols.indexOf(col)] === 'Unidade' ? unitHelpByRow[r] : '';
- if (unitHelp) body += ' <span class="unit-help-icon no-print" aria-hidden="true">ⓘ</span>';
+ if (unitHelp) body += ' <span class="unit-help-icon no-print" aria-hidden="true">&#x2139;&#xFE0E;</span>';
  html+=`<td ${merged[a]?`rowspan="${merged[a]}"`:''} ${unitHelp?`title="${esc(unitHelp)}"`:''} class="${unitHelp?'unit-help ':''}${col!=='A'&&!/Comentário|preenchimento/.test(heads[cols.indexOf(col)])?'center ':''}${calc?'calc':typeof v==='number'?'numeric':'value'}">${body}</td>`}
  html+='</tr>'}return html+'</tbody></table></div>'}
 function panel(id,title,content,sub=''){return `<section id="${id}" class="panel"><div class="panel-head"><h2>${esc(title)}</h2><small>${esc(sub)}</small></div>${content}</section>`}
