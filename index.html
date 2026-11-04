@@ -408,6 +408,7 @@ function evaluatorClipboardHtml(){
     if(activity){
       const keep=heads.map((h,i)=>['atividade','valor','máximo','pontos'].includes(h)?i:-1).filter(i=>i>=0);
       table.querySelectorAll('tr').forEach(row=>[...row.children].forEach((cell,i)=>{if(!keep.includes(i))cell.remove()}));
+      table.querySelector('colgroup')?.remove();
     }
     const minAdjusted=heads.includes('mínimo com afastamento / saúde');
     if(minAdjusted){
