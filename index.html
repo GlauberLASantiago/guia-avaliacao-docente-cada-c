@@ -397,6 +397,15 @@ function evaluatorClipboardHtml(){
   wrapper.style.cssText='font-family:Arial,sans-serif;color:#172e32;background:#fff;max-width:900px;margin:0 auto;line-height:1.35;font-size:12px';
   const source=document.createElement('div');
   source.append(document.querySelector('#main-page').cloneNode(true));
+  const identification=source.querySelector('#identificacao');
+  if(identification){
+    const head=identification.querySelector('.panel-head')?.cloneNode(true),name=evaluatorText(inputValue(0,'B6')).trim(),email=evaluatorText(inputValue(0,'I6')).trim(),department=evaluatorText(inputValue(0,'B7')).trim(),promotion=evaluatorText(inputValue(0,'B8')).trim(),dates=periodDates();
+    const identityLine=[name+(email?` (${email})`:''),department].filter(Boolean).join('. ');
+    const details=document.createElement('div');
+    details.style.cssText='padding:10px 0 4px';
+    details.innerHTML=`<p style="margin:0 0 7px"><strong>Nome completo:</strong> ${esc(identityLine)}</p><p style="margin:0 0 7px"><strong>Promoção / progressão</strong> ${esc(promotion)}</p><p style="margin:0"><strong>Período avaliado:</strong> de ${esc(dateBR(dates.start))} a ${esc(dateBR(dates.end)}.</p>`;
+    identification.replaceChildren(...(head?[head,details]:[details]));
+  }
   source.querySelectorAll('.no-print,.print-value,.months-link,.unit-help-icon,.annex-link,#errors,.hint,.intro').forEach(el=>el.remove());
   source.querySelectorAll('.metrics').forEach(el=>el.remove());
   const headingLabels=['01 — Identificação do docente','03 — Atividades de Ensino — Artigo 46','04 — Atividades de Orientação — Artigo 47','05 — Produção Intelectual — Artigo 48','06 — Atividades de Pesquisa — Artigo 49','07 — Atividades de Extensão — Artigo 50','08 — Administração / Assessoramento — Artigo 51','09 — Atividades de Representação — Artigo 52','10 — Outras Atividades — Artigo 53','Afastamento — Artigos 54 e 55','Resumo da avaliação'];
