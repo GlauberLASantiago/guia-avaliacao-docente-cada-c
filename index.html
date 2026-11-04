@@ -394,6 +394,21 @@ $('#load').onclick=()=>$('#file').click();$('#file').onchange=async e=>{const fi
 $('#reset').onclick=()=>{if(confirm('Limpar todos os campos e o rascunho deste navegador? Salve uma cópia se quiser guardá-los.')){state={};render();persist();toast('Formulário limpo.')}};
 $('#pdf').onclick=()=>{if(validate()){window.print()}};
 function evaluatorText(value){return value===''||value==null?'':String(value)}
+function evaluatorCellValue(a){const c=MODEL.sheets[0].cells[a];if(!c)return '';const raw=c.input?inputValue(0,a):c.v,value=typeof raw==='string'&&raw.startsWith('=')?cell(0,a):raw;return typeof value==='number'?fmt(value,c.format):evaluatorText(value)}
+function evaluatorActivityTable(start,end){
+  const columns=MODEL.scoreOnly?[['A','Atividade'],['B','Valor'],['F','Pontos']]:[['A','Atividade'],['B','Valor'],['E','Máximo'],['F','Pontos']],table=document.createElement('table'),head=document.createElement('thead'),body=document.createElement('tbody'),row=document.createElement('tr');
+  for(const [,label] of columns){const th=document.createElement('th');th.textContent=label;row.append(th)}
+  head.append(row);table.append(head);
+  for(let r=start;r<=end;r++){
+    const rawLabel=evaluatorText(MODEL.sheets[0].cells['A'+r]?.v),label=activityLabel(rawLabel),tr=document.createElement('tr');
+    if(/Pontuação Obtida|TOTAL Limitado|Total da pontuação/.test(label))tr.className='total';else if(/Subtotal|Subtotais|TOTAL Bruto/.test(label))tr.className='subtotal';
+    for(const [index,[column]] of columns.entries()){
+      const td=document.createElement('td'),a=column+r;td.textContent=index===0?label:evaluatorCellValue(a);if(index>0)td.style.textAlign='center';tr.append(td);
+    }
+    body.append(tr);
+  }
+  table.append(body);return table;
+}
 function evaluatorClipboardHtml(){
   const wrapper=document.createElement('div');
   wrapper.style.cssText='font-family:Arial,sans-serif;color:#172e32;background:#fff;max-width:900px;margin:0 auto;line-height:1.35;font-size:12px';
@@ -408,17 +423,16 @@ function evaluatorClipboardHtml(){
     details.innerHTML=`<p style="margin:0 0 7px"><strong>Nome completo:</strong> ${esc(identityLine)}</p><p style="margin:0 0 7px"><strong>Promoção / progressão</strong> ${esc(promotion)}</p><p style="margin:0"><strong>Período avaliado:</strong> de ${esc(dateBR(dates.start))} a ${esc(dateBR(dates.end))}.</p>`;
     identification.replaceChildren(...(head?[head,details]:[details]));
   }
+  for(const [id,,start,end] of sectionDefs){
+    const panel=source.querySelector('#'+id);
+    const oldTable=panel?.querySelector('.table-wrap table');
+    if(oldTable)oldTable.replaceWith(evaluatorActivityTable(start+1,end));
+  }
   source.querySelectorAll('.no-print,.print-value,.months-link,.unit-help-icon,.annex-link,#errors,.hint,.intro').forEach(el=>el.remove());
   source.querySelectorAll('.metrics').forEach(el=>el.remove());
   source.querySelectorAll('.panel-head small').forEach(el=>el.remove());
   source.querySelectorAll('.table-wrap table').forEach(table=>{
     const heads=[...table.querySelectorAll('thead th')].map(th=>th.textContent.trim().toLowerCase());
-    const activity=heads.includes('atividade')&&heads.includes('valor')&&heads.includes('pontos');
-    if(activity){
-      const keep=heads.map((h,i)=>['atividade','valor','máximo','pontos'].includes(h)?i:-1).filter(i=>i>=0);
-      table.querySelectorAll('tr').forEach(row=>[...row.children].forEach((cell,i)=>{if(!keep.includes(i))cell.remove()}));
-      table.querySelector('colgroup')?.remove();
-    }
     const minAdjusted=heads.includes('mínimo com afastamento / saúde');
     if(minAdjusted){
       const index=heads.indexOf('mínimo com afastamento / saúde');
