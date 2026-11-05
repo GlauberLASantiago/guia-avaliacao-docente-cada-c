@@ -136,6 +136,11 @@ header,.panel,.metric{background:var(--paper)}button{background:#f4f3ec}td{borde
   .months-row {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;}
   .months-row output {grid-column: 1 / -1; padding: 0;}
 }
+.print-block-notice{display:none}
+@media print{
+ body.print-blocked > :not(.print-block-notice){display:none!important}
+ body.print-blocked > .print-block-notice{display:block;font-size:14px}
+}
 </style></head>
 <body><header><div class="brand"><div class="mark">C</div><div><strong>UFSCar · Guia de Avaliação docente</strong><small>Comissão de Avaliação de Desempenho Acadêmico - Classe C (CADA-C)</small></div></div><div class="actions"><button id="load">Abrir preenchimento</button><button id="excel">Exportar Excel ↓</button><button id="pdf">Imprimir / PDF</button><button id="save" class="primary">Salvar arquivo para enviar ao SEI</button></div></header>
 <div class="layout"><aside><p>Seu formulário</p><nav id="nav"></nav><div class="local"><strong>Preenchimento local</strong><p>Os dados ficam apenas neste navegador. Para guardar uma cópia e editar depois, clique em <strong>Salvar arquivo para enviar ao SEI</strong>. Use <strong>Abrir preenchimento</strong> para retomar a edição neste ou em outro navegador ou computador.</p><span id="saved" role="status"></span><p><button id="reset">Limpar formulário</button></p></div></aside><main><section class="mode-picker"><label for="evaluation-mode">Modalidade de avaliação</label><select id="evaluation-mode"><option value="bc">1 — Promoção da classe B (Adjunto) para C (Associado)</option><option value="cc">2 — Progressão na classe C (Associado)</option><option value="cd">3 — Promoção da classe C (Associado) para D (Titular)</option></select><p id="mode-description"></p><span class="print-value" id="mode-print"></span></section><div id="errors" class="note" role="status" aria-live="polite"></div><div id="main-page">
@@ -300,7 +305,7 @@ const unitHelpByRow = {
   77: extensionMonthsHelp,
 };
 function romanToArabic(roman){const values={I:1,V:5,X:10,L:50,C:100,D:500,M:1000};let total=0,last=0;for(const char of roman.toUpperCase().split('').reverse()){const value=values[char]||0;total+=value<last?-value:value;last=Math.max(last,value)}return total}
-function activityLabel(label){const match=/^([IVXLCDM]+)([a-z]?)(\s*[-–])/i.exec(label);return match?`${romanToArabic(match[1])}${match[2]}) ${label}`:label}
+function activityLabel(label){const match=/^\s*([IVXLCDM]+)([a-z]?)(?=\s|[-–—])/.exec(label);return match?`${romanToArabic(match[1])}${match[2]}) ${label}`:label}
 function table(s,start,end,cols,heads){if(s===0&&start>=160){start+=MODEL.leaveOffset;end+=MODEL.leaveOffset}if(MODEL.scoreOnly&&s===0&&cols.includes('E')){const i=cols.indexOf('E');cols=cols.filter((_,n)=>n!==i);heads=heads.filter((_,n)=>n!==i)}const cells=MODEL.sheets[s].cells,merged={},skip=new Set();for(const m of MODEL.sheets[s].merges){const [a,b]=m.split(':'),r1=+a.match(/\d+/)[0],r2=+b.match(/\d+/)[0],c1=a.charCodeAt(0),c2=b.charCodeAt(0);if(r1<start||r2>end||c1!==c2)continue;merged[a]=r2-r1+1;for(let r=r1+1;r<=r2;r++)skip.add(String.fromCharCode(c1)+r)}
  const widths=s===1?[48,10,12,12,18]:cols.length===2?[72,28]:cols.length===3?[66,17,17]:cols.length===4?[58,14,14,14]:cols.length===6?[40,10,12,12,13,13]:[40,8,12,10,9,10,11];
  let html='<div class="table-wrap"><table><colgroup>'+cols.map((c,i)=>`<col style="width:${widths[i]}%">`).join('')+'</colgroup><thead><tr>'+heads.map((x,i)=>`<th class="${i>0&&!/Comentário|preenchimento/.test(x)?'center':''}">${x}</th>`).join('')+'</tr></thead><tbody>';
@@ -386,10 +391,10 @@ function toast(msg){$('#toast').textContent=msg;$('#toast').hidden=false;clearTi
 function download(bytes,name,type){const url=URL.createObjectURL(new Blob([bytes],{type})),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 function sanitizeFilename(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,100)||'avaliacao_docente'}
 function saveFilename(extension='json'){const suffix={bc:'pBC',cc:'pC',cd:'pCD'}[MODEL.id]||'pBC',date=new Date(),today=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');return `${sanitizeFilename(inputValue(0,'B6'))}_${suffix}_${today}.${extension}`}
-function validateImport(obj){if(obj?.version!==1||!obj.values||typeof obj.values!=='object'||Array.isArray(obj.values))throw Error('Formato de preenchimento inválido.');let clean={};for(const[k,v]of Object.entries(obj.values)){if(['meta:start','meta:end'].includes(k)){if(typeof v!=='string'||v!==''&&!parseDate(v))throw Error('Data inválida.');clean[k]=v;continue}const match=/^([01]):([A-Z]+\d+)$/.exec(k);if(!match)throw Error('Campo desconhecido.');const s=+match[1],a=match[2];if(s===0&&a==='F46'){if(v!==''&&(typeof v!=='number'||!Number.isFinite(v)||v<0||v>4))throw Error('Pontuação artística inválida.');if(v>0)toast('A pontuação artística agora é calculada pelo anexo. Confira os itens após abrir este preenchimento.');continue}if(!MODEL.sheets[s].cells[a]?.input)throw Error('Campo não editável: '+a);if(isText(s,a)){if(typeof v!=='string'||v.length>32767)throw Error('Texto inválido.')}else{if(v!==''&&(typeof v!=='number'||!Number.isFinite(v)||v<0))throw Error('Número inválido em '+a);if(a===MODEL.monthsCell&&!(v>0)||a===MODEL.maternityCell&&![0,1,''].includes(v)||a==='F46'&&v>4)throw Error('Valor fora do limite em '+a)}clean[k]=v}return clean}
+function validateImport(obj,{draft=false}={}){if(obj?.version!==1||!obj.values||typeof obj.values!=='object'||Array.isArray(obj.values))throw Error('Formato de preenchimento inválido.');let clean={};for(const[k,v]of Object.entries(obj.values)){if(['meta:start','meta:end'].includes(k)){if(typeof v!=='string'||!draft&&v!==''&&!parseDate(v))throw Error('Data inválida.');clean[k]=v;continue}const match=/^([01]):([A-Z]+\d+)$/.exec(k);if(!match)throw Error('Campo desconhecido.');const s=+match[1],a=match[2];if(s===0&&a==='F46'){if(v!==''&&(typeof v!=='number'||!Number.isFinite(v)||v<0||v>4))throw Error('Pontuação artística inválida.');if(v>0)toast('A pontuação artística agora é calculada pelo anexo. Confira os itens após abrir este preenchimento.');continue}if(!MODEL.sheets[s].cells[a]?.input)throw Error('Campo não editável: '+a);if(isText(s,a)){if(typeof v!=='string'||(!draft&&v.length>32767))throw Error('Texto inválido.')}else{if(v!==''&&(typeof v!=='number'||!Number.isFinite(v)||(!draft&&v<0)))throw Error('Número inválido em '+a);if(!draft&&(a===MODEL.monthsCell&&!(v>0)||a===MODEL.maternityCell&&![0,1,''].includes(v)))throw Error('Valor fora do limite em '+a)}clean[k]=v}return clean}
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.date){state['meta:'+el.dataset.date]=el.value;update();persist();return}if(!el.dataset.cell)return;const s=+el.dataset.sheet,a=el.dataset.cell;state[key(s,a)]=isText(s,a)?el.value:el.value===''?'':el.valueAsNumber??Number(el.value);update();persist()});
 document.addEventListener('change',e=>{if(e.target.id==='absence'){state['0:B10']=e.target.value==='sim'?'(X)':'( )';state['0:B11']=e.target.value==='nao'?'(X)':'( )';update();persist()}});
-function validateOutput(){
+function validateOutput(showFeedback=true){
  const fields=[
   ['#field-B6','nome completo'],
   ['#field-I6','e-mail institucional'],
@@ -399,12 +404,13 @@ function validateOutput(){
  ];
  const missing=fields.filter(([selector])=>!$(selector).value.trim());
  if(missing.length){
+  if(!showFeedback)return false;
   toast('Preencha os campos obrigatórios: '+missing.map(([,label])=>label).join(', ')+'.');
   $(missing[0][0]).focus();
   return false;
  }
  if(!validate()){
-  toast('Confira os campos indicados no formulário antes de continuar.');
+  if(showFeedback)toast('Confira os campos indicados no formulário antes de continuar.');
   return false;
  }
  return true;
@@ -412,6 +418,14 @@ function validateOutput(){
 $('#save').onclick=()=>{if(!validateOutput())return;download(JSON.stringify({version:1,mode:MODEL.id,values:state},null,2),saveFilename(),'application/json');toast('Arquivo para envio ao SEI salvo como '+saveFilename()+'.')};
 $('#load').onclick=()=>$('#file').click();$('#file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const obj=JSON.parse(await file.text()),target=MODELS[obj.mode||'bc'];if(!target)throw Error('Modalidade não reconhecida.');const previous=MODEL;let next;try{MODEL=target;next=validateImport(obj)}finally{MODEL=previous}if(Object.keys(state).length&&!confirm('Substituir o preenchimento atual pelo arquivo selecionado?'))return;persist();MODEL=target;KEY=modeKey(MODEL.id);state=next;localStorage.setItem(BASE_KEY+'-selected',MODEL.id);render();persist();toast('Preenchimento carregado.')}catch(e){toast('Não foi possível abrir: '+e.message)}finally{$('#file').value=''}};
 $('#reset').onclick=()=>{if(confirm('Limpar todos os campos e o rascunho deste navegador? Salve uma cópia se quiser guardá-los.')){state={};render();persist();toast('Formulário limpo.')}};
+const printBlockNotice=document.createElement('p');
+printBlockNotice.className='print-block-notice';
+printBlockNotice.textContent='Para imprimir a avaliação, preencha nome completo, e-mail institucional, departamento e as duas datas do período. Confira também os campos sinalizados no formulário.';
+document.body.append(printBlockNotice);
+window.addEventListener('beforeprint',()=>{
+ document.body.classList.toggle('print-blocked',!validateOutput(false));
+});
+window.addEventListener('afterprint',()=>document.body.classList.remove('print-blocked'));
 $('#pdf').onclick=()=>{
  if(!validateOutput())return;
  const originalTitle=document.title;
@@ -495,12 +509,20 @@ async function copyForEvaluator(){
   try{
     if(navigator.clipboard?.write && window.ClipboardItem){
       await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([plain],{type:'text/plain'})})]);
+      toast('Conteúdo formatado copiado. Cole diretamente no documento do SEI.');
     }else if(navigator.clipboard?.writeText){
       await navigator.clipboard.writeText(plain);
+      toast('Conteúdo copiado como texto. Cole no documento do SEI.');
     }else throw Error('clipboard indisponível');
-    toast('Conteúdo formatado copiado. Cole diretamente no documento do SEI.');
   }catch{
-    const area=document.createElement('textarea');area.value=plain;area.style.position='fixed';area.style.opacity='0';document.body.append(area);area.select();document.execCommand('copy');area.remove();toast('Conteúdo copiado. Cole diretamente no documento do SEI.');
+    const area=document.createElement('textarea');
+    area.value=plain;
+    area.style.position='fixed';
+    area.style.opacity='0';
+    document.body.append(area);
+    let copied=false;
+    try{area.select();copied=document.execCommand('copy')}catch{}finally{area.remove()}
+    toast(copied?'Conteúdo copiado como texto. Cole no documento do SEI.':'O navegador não conseguiu copiar. Tente novamente.');
   }
 }
 $('#evaluator-copy').onclick=copyForEvaluator;
@@ -516,7 +538,7 @@ function excelInputValue(s,a,c){if(s===0){if(a==='H6'||a==='I6')return '';if(a==
 function makeExcel(){if(!validate())throw Error('Há campos inválidos.');cache=[{},{}];const parser=new DOMParser(),serialize=new XMLSerializer(),entries=[],styles=protectedExcelStyles();for(const[name,b64]of Object.entries(MODEL.template)){let bytes=Uint8Array.from(atob(b64),x=>x.charCodeAt(0));if(name==='xl/styles.xml')bytes=styles.bytes;const match=/^xl\/worksheets\/sheet([12])\.xml$/.exec(name);if(match){const s=+match[1]-1,doc=parser.parseFromString(dec.decode(bytes),'application/xml'),ns=doc.documentElement.namespaceURI;const all=new Map([...doc.getElementsByTagNameNS(ns,'c')].map(c=>[c.getAttribute('r'),c]));for(const[a,c]of Object.entries(MODEL.sheets[s].cells)){if(!c.input&&!(typeof c.v==='string'&&c.v.startsWith('='))&&!(s===0&&Object.hasOwn(MODEL.fixes,a))&&!(s===1&&MODEL.scoreOnly&&a==='A55'))continue;let node=all.get(a);if(!node){const r=a.match(/\d+/)[0],row=[...doc.getElementsByTagNameNS(ns,'row')].find(x=>x.getAttribute('r')===r);if(!row)throw Error('Linha ausente: '+a);node=doc.createElementNS(ns,'c');node.setAttribute('r',a);row.append(node)}const f=typeof c.v==='string'&&c.v.startsWith('=')?c.v:null;xmlValue(doc,node,f?cell(s,a):excelInputValue(s,a,c),f)}protectExcelSheet(doc,s,styles);bytes=enc.encode(serialize.serializeToString(doc))}entries.push([name,bytes])}return zipStore(entries)}
 $('#excel').onclick=()=>{if(!validateOutput())return;try{download(makeExcel(),saveFilename('xlsx'),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');toast('Excel exportado com as duas abas e as fórmulas.')}catch(e){toast('Falha ao exportar: '+e.message)}};
 function modeKey(id){return id==='bc'?BASE_KEY:BASE_KEY+':'+id}
-function loadMode(id){MODEL=MODELS[id]||MODELS.bc;KEY=modeKey(MODEL.id);state={};try{const saved=localStorage.getItem(KEY);if(saved)state=validateImport(JSON.parse(saved))}catch{toast('Abra uma cópia salva para recuperar seu preenchimento.')}}
+function loadMode(id){MODEL=MODELS[id]||MODELS.bc;KEY=modeKey(MODEL.id);state={};try{const saved=localStorage.getItem(KEY);if(saved)state=validateImport(JSON.parse(saved),{draft:true})}catch{toast('Abra uma cópia salva para recuperar seu preenchimento.')}}
 function transferInputs(values, from, to){
  const transferred={};
  for(const [field,value] of Object.entries(values)){
