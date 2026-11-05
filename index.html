@@ -389,11 +389,31 @@ function saveFilename(extension='json'){const suffix={bc:'pBC',cc:'pC',cd:'pCD'}
 function validateImport(obj){if(obj?.version!==1||!obj.values||typeof obj.values!=='object'||Array.isArray(obj.values))throw Error('Formato de preenchimento inválido.');let clean={};for(const[k,v]of Object.entries(obj.values)){if(['meta:start','meta:end'].includes(k)){if(typeof v!=='string'||v!==''&&!parseDate(v))throw Error('Data inválida.');clean[k]=v;continue}const match=/^([01]):([A-Z]+\d+)$/.exec(k);if(!match)throw Error('Campo desconhecido.');const s=+match[1],a=match[2];if(s===0&&a==='F46'){if(v!==''&&(typeof v!=='number'||!Number.isFinite(v)||v<0||v>4))throw Error('Pontuação artística inválida.');if(v>0)toast('A pontuação artística agora é calculada pelo anexo. Confira os itens após abrir este preenchimento.');continue}if(!MODEL.sheets[s].cells[a]?.input)throw Error('Campo não editável: '+a);if(isText(s,a)){if(typeof v!=='string'||v.length>32767)throw Error('Texto inválido.')}else{if(v!==''&&(typeof v!=='number'||!Number.isFinite(v)||v<0))throw Error('Número inválido em '+a);if(a===MODEL.monthsCell&&!(v>0)||a===MODEL.maternityCell&&![0,1,''].includes(v)||a==='F46'&&v>4)throw Error('Valor fora do limite em '+a)}clean[k]=v}return clean}
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.date){state['meta:'+el.dataset.date]=el.value;update();persist();return}if(!el.dataset.cell)return;const s=+el.dataset.sheet,a=el.dataset.cell;state[key(s,a)]=isText(s,a)?el.value:el.value===''?'':el.valueAsNumber??Number(el.value);update();persist()});
 document.addEventListener('change',e=>{if(e.target.id==='absence'){state['0:B10']=e.target.value==='sim'?'(X)':'( )';state['0:B11']=e.target.value==='nao'?'(X)':'( )';update();persist()}});
-$('#save').onclick=()=>{if(!validate()){toast('Corrija os campos inválidos antes de salvar.');return}download(JSON.stringify({version:1,mode:MODEL.id,values:state},null,2),saveFilename(),'application/json');toast('Arquivo para envio ao SEI salvo como '+saveFilename()+'.')};
+function validateOutput(){
+ const fields=[
+  ['#field-B6','nome completo'],
+  ['#field-I6','e-mail institucional'],
+  ['#field-B7','departamento'],
+  ['#period-start','data inicial do período'],
+  ['#period-end','data final do período']
+ ];
+ const missing=fields.filter(([selector])=>!$(selector).value.trim());
+ if(missing.length){
+  toast('Preencha os campos obrigatórios: '+missing.map(([,label])=>label).join(', ')+'.');
+  $(missing[0][0]).focus();
+  return false;
+ }
+ if(!validate()){
+  toast('Confira os campos indicados no formulário antes de continuar.');
+  return false;
+ }
+ return true;
+}
+$('#save').onclick=()=>{if(!validateOutput())return;download(JSON.stringify({version:1,mode:MODEL.id,values:state},null,2),saveFilename(),'application/json');toast('Arquivo para envio ao SEI salvo como '+saveFilename()+'.')};
 $('#load').onclick=()=>$('#file').click();$('#file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const obj=JSON.parse(await file.text()),target=MODELS[obj.mode||'bc'];if(!target)throw Error('Modalidade não reconhecida.');const previous=MODEL;let next;try{MODEL=target;next=validateImport(obj)}finally{MODEL=previous}if(Object.keys(state).length&&!confirm('Substituir o preenchimento atual pelo arquivo selecionado?'))return;persist();MODEL=target;KEY=modeKey(MODEL.id);state=next;localStorage.setItem(BASE_KEY+'-selected',MODEL.id);render();persist();toast('Preenchimento carregado.')}catch(e){toast('Não foi possível abrir: '+e.message)}finally{$('#file').value=''}};
 $('#reset').onclick=()=>{if(confirm('Limpar todos os campos e o rascunho deste navegador? Salve uma cópia se quiser guardá-los.')){state={};render();persist();toast('Formulário limpo.')}};
 $('#pdf').onclick=()=>{
- if(!validate())return;
+ if(!validateOutput())return;
  const originalTitle=document.title;
  document.title=saveFilename('pdf').slice(0,-4);
  window.addEventListener('afterprint',()=>{document.title=originalTitle},{once:true});
@@ -468,7 +488,7 @@ function evaluatorClipboardHtml(){
   return '<!doctype html><html><head><meta charset="utf-8"><title>Para uso do Avaliador</title></head><body style="margin:24px;background:#fff">'+wrapper.outerHTML+'</body></html>';
 }
 async function copyForEvaluator(){
-  if(!validate()){toast('Informe as datas e confira os campos antes de copiar para o Avaliador.');return}
+  if(!validateOutput())return;
   const html=evaluatorClipboardHtml();
   const plain=new DOMParser().parseFromString(html,'text/html').body.innerText;
   try{
@@ -493,7 +513,7 @@ function protectedExcelStyles(){const doc=new DOMParser().parseFromString(dec.de
 function protectExcelSheet(doc,s,styles){const ns=doc.documentElement.namespaceURI;for(const node of doc.getElementsByTagNameNS(ns,'c')){const a=node.getAttribute('r'),c=MODEL.sheets[s].cells[a],editable=Boolean(c?.input)&&!(s===0&&a===MODEL.monthsCell);const base=Number(node.getAttribute('s')||0);node.setAttribute('s',String((editable?styles.unlocked:styles.locked)[base]))}for(const kind of ['col','row'])for(const node of doc.getElementsByTagNameNS(ns,kind)){if(node.hasAttribute(kind==='col'?'style':'s')){const attribute=kind==='col'?'style':'s';node.setAttribute(attribute,String(styles.locked[Number(node.getAttribute(attribute))]))}}for(const old of [...doc.getElementsByTagNameNS(ns,'sheetProtection')])old.remove();const protection=doc.createElementNS(ns,'sheetProtection');for(const [a,v]of Object.entries({password:'CC3D',sheet:'1',objects:'1',scenarios:'1',formatCells:'1',formatColumns:'1',formatRows:'1',insertColumns:'1',insertRows:'1',deleteColumns:'1',deleteRows:'1',selectLockedCells:'0',selectUnlockedCells:'0'}))protection.setAttribute(a,v);const data=doc.getElementsByTagNameNS(ns,'sheetData')[0];doc.documentElement.insertBefore(protection,data.nextSibling)}
 function excelInputValue(s,a,c){if(s===0){if(a==='H6'||a==='I6')return '';if(a==='B6'){const name=String(inputValue(0,'B6')).trim(),email=String(inputValue(0,'I6')).trim();return email?(name?name+' ('+email+')':'('+email+')'):name}}return c.input?inputValue(s,a):c.v}
 function makeExcel(){if(!validate())throw Error('Há campos inválidos.');cache=[{},{}];const parser=new DOMParser(),serialize=new XMLSerializer(),entries=[],styles=protectedExcelStyles();for(const[name,b64]of Object.entries(MODEL.template)){let bytes=Uint8Array.from(atob(b64),x=>x.charCodeAt(0));if(name==='xl/styles.xml')bytes=styles.bytes;const match=/^xl\/worksheets\/sheet([12])\.xml$/.exec(name);if(match){const s=+match[1]-1,doc=parser.parseFromString(dec.decode(bytes),'application/xml'),ns=doc.documentElement.namespaceURI;const all=new Map([...doc.getElementsByTagNameNS(ns,'c')].map(c=>[c.getAttribute('r'),c]));for(const[a,c]of Object.entries(MODEL.sheets[s].cells)){if(!c.input&&!(typeof c.v==='string'&&c.v.startsWith('='))&&!(s===0&&Object.hasOwn(MODEL.fixes,a))&&!(s===1&&MODEL.scoreOnly&&a==='A55'))continue;let node=all.get(a);if(!node){const r=a.match(/\d+/)[0],row=[...doc.getElementsByTagNameNS(ns,'row')].find(x=>x.getAttribute('r')===r);if(!row)throw Error('Linha ausente: '+a);node=doc.createElementNS(ns,'c');node.setAttribute('r',a);row.append(node)}const f=typeof c.v==='string'&&c.v.startsWith('=')?c.v:null;xmlValue(doc,node,f?cell(s,a):excelInputValue(s,a,c),f)}protectExcelSheet(doc,s,styles);bytes=enc.encode(serialize.serializeToString(doc))}entries.push([name,bytes])}return zipStore(entries)}
-$('#excel').onclick=()=>{try{download(makeExcel(),saveFilename('xlsx'),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');toast('Excel exportado com as duas abas e as fórmulas.')}catch(e){toast('Falha ao exportar: '+e.message)}};
+$('#excel').onclick=()=>{if(!validateOutput())return;try{download(makeExcel(),saveFilename('xlsx'),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');toast('Excel exportado com as duas abas e as fórmulas.')}catch(e){toast('Falha ao exportar: '+e.message)}};
 function modeKey(id){return id==='bc'?BASE_KEY:BASE_KEY+':'+id}
 function loadMode(id){MODEL=MODELS[id]||MODELS.bc;KEY=modeKey(MODEL.id);state={};try{const saved=localStorage.getItem(KEY);if(saved)state=validateImport(JSON.parse(saved))}catch{toast('Abra uma cópia salva para recuperar seu preenchimento.')}}
 function transferInputs(values, from, to){
