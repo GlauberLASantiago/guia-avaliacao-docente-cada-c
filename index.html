@@ -472,6 +472,7 @@ function evaluatorClipboardHtml(){
     else value=control.value;
     span.textContent=evaluatorText(value);
     span.style.cssText='display:inline-block;min-width:28px;min-height:18px;padding:0;white-space:pre-wrap';
+    if(control.id==='absence')control.before(' ');
     control.replaceWith(span);
   });
   source.querySelectorAll('button,a').forEach(el=>el.remove());
