@@ -316,7 +316,7 @@ function table(s,start,end,cols,heads){if(s===0&&start>=160){start+=MODEL.leaveO
 function panel(id,title,content,sub='',hasMonthsCalculator=false){return `<section id="${id}" class="panel"><div class="panel-head${hasMonthsCalculator?' has-months':''}"><h2>${esc(title)}</h2>${hasMonthsCalculator?'<button type="button" class="months-link no-print" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M7.5 6.5h9M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h4"/></svg>Acesse nossa calculadora de meses</button>':''}<small>${esc(sub)}</small></div>${content}</section>`}
 function hasMonthsInput(start,end){const cells=MODEL.sheets[0].cells;for(let r=start;r<=end;r++){const quantity=cells['D'+r];if(quantity?.input&&cells['C'+r]?.v==='Meses')return true}return false}
 function render(){
- $('#evaluation-mode').value=MODEL.id;$('#mode-print').textContent=MODEL.label;$('#mode-description').textContent=MODEL.scoreOnly?'Contagem de pontos, sem mínimos, tetos ou parecer de aprovação.':'Mínimos e limites específicos desta modalidade. O preenchimento é salvo separadamente para cada opção.';
+ $('#evaluation-mode').value=MODEL.id;$('#mode-print').textContent=MODEL.label;$('#mode-description').textContent=MODEL.scoreOnly?'Contagem de pontos, sem mínimos, tetos ou parecer de aprovação.':'Mínimos e limites específicos desta modalidade. Os dados dos campos em comum são mantidos ao trocar de modalidade.';
  document.body.classList.toggle('score-only',MODEL.scoreOnly);document.querySelector('#main-page .intro p').textContent=MODEL.scoreOnly?'Preencha as atividades para somar seus pontos. Esta modalidade apresenta a pontuação, sem mínimos, limites máximos ou parecer de aprovação.':'Preencha os campos claros. A pontuação, os limites e os requisitos são calculados enquanto você digita.';document.querySelector('#main-page .tag').textContent=MODEL.label;document.querySelector('.metric:first-child em').textContent=MODEL.scoreOnly?'Contagem de pontos sem limite máximo':'Limite global: '+cell(0,'E138')+' pontos';
 
  document.querySelector('#art-page .intro p').textContent='Informe a quantidade de cada produção. A pontuação aparece automaticamente na atividade V da página principal'+(MODEL.scoreOnly?', sem limite máximo.':', respeitando o limite de 4 pontos.');document.querySelector('.annex-toolbar span').textContent=MODEL.scoreOnly?' pontos':' / 4 pontos';
@@ -490,7 +490,37 @@ function makeExcel(){if(!validate())throw Error('Há campos inválidos.');cache=
 $('#excel').onclick=()=>{try{download(makeExcel(),'Avaliacao-'+MODEL.id.toUpperCase()+'.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');toast('Excel exportado com as duas abas e as fórmulas.')}catch(e){toast('Falha ao exportar: '+e.message)}};
 function modeKey(id){return id==='bc'?BASE_KEY:BASE_KEY+':'+id}
 function loadMode(id){MODEL=MODELS[id]||MODELS.bc;KEY=modeKey(MODEL.id);state={};try{const saved=localStorage.getItem(KEY);if(saved)state=validateImport(JSON.parse(saved))}catch{toast('Abra uma cópia salva para recuperar seu preenchimento.')}}
-$('#evaluation-mode').onchange=e=>{const next=e.target.value;if(next===MODEL.id)return;if(!confirm('Deseja mudar a modalidade de avaliação?\n\nOs dados do formulário atual não serão transferidos para a nova modalidade. Salve uma cópia em “Salvar preenchimento” se quiser guardá-los em um arquivo.\n\nO rascunho de cada modalidade permanece salvo neste navegador.\n\nClique em OK para mudar ou em Cancelar para continuar no formulário atual.')){e.target.value=MODEL.id;return}persist();loadMode(next);try{localStorage.setItem(BASE_KEY+'-selected',MODEL.id)}catch{}location.hash='#identificacao';render()};
+function transferInputs(values, from, to){
+ const transferred={};
+ for(const [field,value] of Object.entries(values)){
+  if(field==='meta:start'||field==='meta:end'){transferred[field]=value;continue}
+  const match=/^([01]):([A-Z]+)(\d+)$/.exec(field);
+  if(!match)continue;
+  const [,sheet,column,rowText]=match;
+  const row=Number(rowText);
+  let address=column+row;
+  if(sheet==='0'){
+   const canonicalRow=row>=160+from.leaveOffset?row-from.leaveOffset:row;
+   if(canonicalRow>=160)address=column+(canonicalRow+to.leaveOffset);
+   else if(to.scoreOnly&&canonicalRow>=139)continue;
+   if(address===to.monthsCell)continue;
+  }
+  if(to.sheets[Number(sheet)].cells[address]?.input)transferred[key(Number(sheet),address)]=value;
+ }
+ return transferred;
+}
+$('#evaluation-mode').onchange=e=>{
+ const next=MODELS[e.target.value];
+ if(!next||next.id===MODEL.id)return;
+ const carried=transferInputs(state,MODEL,next);
+ persist();
+ loadMode(next.id);
+ state={...state,...carried};
+ try{localStorage.setItem(BASE_KEY+'-selected',MODEL.id)}catch{}
+ location.hash='#identificacao';
+ render();
+ persist();
+};
 let selected='bc';try{selected=localStorage.getItem(BASE_KEY+'-selected')||'bc'}catch{}loadMode(selected);
 render();
 </script></body></html>
